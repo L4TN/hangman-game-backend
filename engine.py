@@ -3,6 +3,7 @@ import websockets
 import json
 import random
 from datetime import datetime, timedelta
+import os
 
 # Cache global para armazenar o estado das sessões
 session_cache = {}
@@ -306,9 +307,16 @@ async def keep_connection_alive(websocket):
         print(f"Exceção ao manter conexão com {websocket.remote_address}: {e}")
 
 async def start_server():
-    async with websockets.serve(handle_connection, "localhost", 6789):
-        print("Servidor WebSocket rodando em ws://localhost:6789")
-        await asyncio.Future()
+    is_render = "RENDER" in os.environ
+
+    # Configura o host e a porta com base no ambiente
+    port = int(os.environ.get("PORT", 6789))  # Porta definida no Render ou 6789 localmente
+    host = "0.0.0.0" if is_render else "localhost"
+
+    async with websockets.serve(handle_connection, host, port):
+        print(f"Servidor WebSocket rodando em ws://{host}:{port}")
+        await asyncio.Future()  # Mantém o servidor rodando
+
 
 if __name__ == "__main__":
     asyncio.run(start_server())

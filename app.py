@@ -13,9 +13,17 @@ def create_app():
     app.config.from_object("config.Config")
 
     # Habilitar CORS apenas para a origem confiável
+    
     CORS(app, resources={
-        r"/*": {"origins": ["https://hangman-game-frontend.onrender.com"]}
-    }, supports_credentials=True)
+        r"/*": {
+            "origins": [
+                "https://hangman-game-frontend.onrender.com",  # Frontend na Render
+                "http://127.0.0.1:3000",  # Endereço local padrão para React ou outro frontend local
+                "http://localhost:3000",   # Alternativa para localhost
+                "http://127.0.0.1:5500",   # Adicionado endereço local (porta 5500)
+            ]
+        }
+    })
 
     # Middleware para validar Content-Type
     @app.before_request
