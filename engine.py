@@ -323,7 +323,7 @@ async def start_server():
     port = int(os.environ.get("PORT", 6789))  # Porta definida no Render ou 6789 localmente
     host = "0.0.0.0" if is_render else "localhost"
 
-    async with websockets.serve(handle_connection, host, port):
+    async with websockets.serve(handle_connection, host):
         print(f"Servidor WebSocket rodando em ws://{host}:{port}")
         await asyncio.Future()  # Mantém o servidor rodando
 
