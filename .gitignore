@@ -1,0 +1,95 @@
+# Ignore os arquivos de cache do Python
+__pycache__/
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore arquivos de cache do pip
+.cache/
+.pip/
+
+# Ignore arquivos de ambiente virtual
+venv/
+env/
+
+# Ignore arquivos de configuração do IDE
+.idea/
+.vscode/
+
+# Ignore arquivos de log
+*.log
+
+# Ignore arquivos de saída do build
+build/
+dist/
+*.egg-info/
+
+# Ignore arquivos temporários
+*.swp
+*.swo
+*.tmp
+
+# Ignore arquivos de configuração pessoal
+*.ini
+*.cfg
+
+# Ignore arquivos de dados
+*.sqlite
+*.db
+
+# Ignore arquivos de teste
+*.coverage
+*.xml
+
+# Ignore arquivos de cache do pytest
+.pytest_cache/
+
+# Ignore arquivos de cache do coverage
+.coverage
+
+# Ignore arquivos de cache do Flask
+instance/
+
+# Ignore arquivos de cache do Jupyter Notebook
+.ipynb_checkpoints/
+
+# Ignore arquivos de cache do Django
+*.py[co]
+
+# Ignore arquivos de cache do Sphinx
+_build/
+
+# Ignore arquivos de cache do Black
+.black/
+
+# Ignore arquivos de cache do isort
+.isort.cfg
+
+# Ignore arquivos de cache do mypy
+.mypy_cache/
+
+# Ignore arquivos de cache do pre-commit
+.pre-commit-config.yaml
+
+# Ignore arquivos de cache do tox
+.tox/
+
+# Ignore arquivos de cache do virtualenv
+.virtualenv/
+
+# Ignore arquivos de cache do pipenv
+Pipfile.lock
+
+# Ignore arquivos de cache do poetry
+poetry.lock
+
+# Ignore arquivos de cache do pyenv
+.python-version
+
+# Ignore arquivos de cache do pyinstaller
+build/
+dist/
+*.spec
+.aider*
+.env

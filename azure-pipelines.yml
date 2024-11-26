@@ -1,0 +1,88 @@
+trigger:
+  branches:
+    include:
+      - main
+      - uat
+      - dev
+
+variables:
+  azureServiceConnectionId: 'a1e384dd-b074-4d29-b012-090c8cb4e0e6'
+  webAppName: 'hangman-game-backend'
+  vmImageName: 'ubuntu-latest'
+  environmentName: 'hangman-game-backend'
+  pythonVersion: '3.10.11'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Job'
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+        addToPath: true
+      displayName: 'Use Python $(pythonVersion)'
+
+    - script: |
+        python -m venv antenv
+        source antenv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      displayName: 'Set up Python environment and install dependencies'
+
+    - task: ArchiveFiles@2
+      displayName: 'Archive Files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Artifact'
+      inputs:
+        targetPath: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        artifact: drop
+
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeploymentJob
+    displayName: 'Deploy Job'
+    pool:
+      vmImage: $(vmImageName)
+    environment: $(environmentName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+              addToPath: true
+            displayName: 'Use Python $(pythonVersion)'
+
+          - script: |
+              python -m venv antenv
+              source antenv/bin/activate
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+            displayName: 'Set up Python environment and install dependencies in deployment environment'
+
+
+          - task: AzureWebApp@1
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+              includeRootFolder: false
+              azureSubscription: $(azureServiceConnectionId)
+              appType: webApp
+              appName: $(webAppName)
+              package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+            displayName: 'Deploy to Azure Web App'
