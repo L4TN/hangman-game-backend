@@ -1,12 +1,43 @@
 import os
 import threading
 import asyncio
+import subprocess
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from database import db
 from blueprints import register_blueprints
 from flask_migrate import Migrate
 from engine import start_server
+
+def install_odbc_driver():
+    """Instala o ODBC Driver 18 para SQL Server."""
+    try:
+        print("Atualizando pacotes e instalando dependências...")
+        # Atualizar pacotes e instalar curl e gnupg
+        subprocess.run("apt-get update && apt-get install -y curl gnupg", shell=True, check=True)
+
+        print("Adicionando chave e repositório do Microsoft ODBC Driver...")
+        # Adicionar a chave pública e o repositório da Microsoft
+        subprocess.run(
+            "curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -",
+            shell=True, check=True
+        )
+        subprocess.run(
+            "curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list > /etc/apt/sources.list.d/mssql-release.list",
+            shell=True, check=True
+        )
+
+        print("Instalando ODBC Driver 18 e dependências...")
+        # Instalar o ODBC Driver 18 e dependências
+        subprocess.run(
+            "apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev",
+            shell=True, check=True
+        )
+        print("Instalação do ODBC Driver concluída com sucesso!")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Erro ao instalar o ODBC Driver: {e}")
+        raise
 
 def create_app():
     app = Flask(__name__)
@@ -36,6 +67,9 @@ def run_engine_in_thread():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(start_server())
+
+# Instalar o driver ODBC antes de iniciar o servidor
+install_odbc_driver()
 
 # Criação da aplicação global
 app = create_app()
