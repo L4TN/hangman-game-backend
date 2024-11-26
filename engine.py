@@ -260,47 +260,27 @@ async def handle_connection(websocket):
         player_id = player_data["player_id"]
         session_id = player_data["session_id"]
 
-        if session_id in session_cache:
-            print(f"Jogador {player_id} reconectando à sessão {session_id}.")
-            # Restaura o estado da sessão existente
-            state = session_cache[session_id]
-            game_session = GameSession(None, None, session_id)
-            game_session.load_from_cache()
+        # Cria uma nova sessão ou adiciona o jogador à fila
+        waiting_players.append((websocket, player_id, session_id))
 
-            # Substituir o jogador desconectado pelo novo websocket
-            if state["current_player_index"] == 0 and not game_session.connected[0]:
-                game_session.players[0] = websocket
-                game_session.connected[0] = True
-            elif state["current_player_index"] == 1 and not game_session.connected[1]:
-                game_session.players[1] = websocket
-                game_session.connected[1] = True
-            # else:
-            #     await websocket.send(json.dumps({"type": "error", "message": "Sessão em andamento"}))
-            #     return
-
-            # Iniciar a partida com os dados atualizados
+        if len(waiting_players) >= 2:
+            (player1, player1_id, session1_id), (player2, player2_id, session2_id) = waiting_players[:2]
+            del waiting_players[:2]
+            game_session = GameSession(player1, player2, session1_id)
             await game_session.start()
         else:
-            # Cria uma nova sessão ou adiciona o jogador à fila
-            waiting_players.append((websocket, player_id, session_id))
-
-            if len(waiting_players) >= 2:
-                (player1, player1_id, session1_id), (player2, player2_id, session2_id) = waiting_players[:2]
-                del waiting_players[:2]
-                game_session = GameSession(player1, player2, session1_id)
-                await game_session.start()
-            else:
-                await websocket.send(json.dumps({"type": "wait", "message": "Aguardando outro jogador"}))
-                await keep_connection_alive(websocket)
+            await websocket.send(json.dumps({"type": "wait", "message": "Aguardando outro jogador"}))
+            await keep_connection_alive(websocket)
     except websockets.exceptions.ConnectionClosed:
         print(f"Jogador {websocket.remote_address} desconectou.")
     except Exception as e:
         print(f"Exceção na conexão com {websocket.remote_address}: {e}")
 
+
 async def keep_connection_alive(websocket):
     try:
         while True:
-            await asyncio.sleep(2)
+            await asyncio.sleep(10)
     except websockets.exceptions.ConnectionClosed:
         print(f"Conexão com {websocket.remote_address} foi fechada.")
     except Exception as e:
