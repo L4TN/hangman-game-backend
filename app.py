@@ -12,38 +12,18 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object("config.Config")
 
-    # Habilitar CORS para múltiplas origens
+    # Habilitar CORS apenas para a origem confiável
     CORS(app, resources={
-        r"/*": {"origins": [
-            "http://localhost:3000",  # Origem local
-            "http://127.0.0.1:5500",  # Origem alternativa local
-            "https://lively-beach-0a427280f.5.azurestaticapps.net"  # Origem de produção
-        ]}
+        r"/*": {"origins": ["https://hangman-game-frontend.onrender.com"]}
     }, supports_credentials=True)
-
-    # Adiciona cabeçalhos extras para CORS (opcional)
-    @app.after_request
-    def add_cors_headers(response):
-        allowed_origins = [
-            "http://localhost:3000",
-            "http://127.0.0.1:5500",
-            "https://lively-beach-0a427280f.5.azurestaticapps.net"
-        ]
-        if request.origin in allowed_origins:
-            response.headers["Access-Control-Allow-Origin"] = request.origin
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Max-Age"] = "3600"  # Cache para preflight
-        return response
 
     # Middleware para validar Content-Type
     @app.before_request
     def validate_json():
-        """Valida se o Content-Type é application/json para métodos POST e PUT."""
         if request.method in ["POST", "PUT"] and not request.is_json:
             return jsonify({"success": False, "message": "Content-Type deve ser application/json"}), 415
 
-    # Inicializar o banco de dados e migrações
+    # Inicializar banco de dados e migrações
     db.init_app(app)
     Migrate(app, db)
 
@@ -53,21 +33,20 @@ def create_app():
     return app
 
 def run_engine_in_thread():
-    """Executa o WebSocket em uma thread."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(start_server())
 
-# Criação da aplicação global para o OnRender
+# Criação da aplicação global
 app = create_app()
 
-# Iniciar o WebSocket em uma thread separada (se necessário)
-if threading.active_count() == 1:  # Certifica que nenhuma outra thread foi iniciada
+# Iniciar o WebSocket em uma thread separada
+if threading.active_count() == 1:
     engine_thread = threading.Thread(
         target=run_engine_in_thread, daemon=True)
     engine_thread.start()
 
 # Configuração para rodar no OnRender
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Pega a porta da variável de ambiente ou usa 8000 como padrão
+    port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
