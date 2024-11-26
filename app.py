@@ -1,3 +1,4 @@
+import os
 import threading
 import asyncio
 from flask import Flask, request, jsonify
@@ -51,23 +52,22 @@ def create_app():
 
     return app
 
-def run_flask():
-    """Função para rodar o Flask."""
-    app = create_app()
-    app.run(host="0.0.0.0", port=8000, debug=True, use_reloader=False)  # Configuração padrão para produção
-
 def run_engine_in_thread():
     """Executa o WebSocket em uma thread."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop.run_until_complete(start_server())
 
-if __name__ == "__main__":
-    # Evita iniciar o servidor WebSocket várias vezes
-    if threading.active_count() == 1:  # Certifica que nenhuma outra thread foi iniciada
-        engine_thread = threading.Thread(
-            target=run_engine_in_thread, daemon=True)
-        engine_thread.start()
+# Criação da aplicação global para o OnRender
+app = create_app()
 
-    # Executa o Flask no processo principal
-    run_flask()
+# Iniciar o WebSocket em uma thread separada (se necessário)
+if threading.active_count() == 1:  # Certifica que nenhuma outra thread foi iniciada
+    engine_thread = threading.Thread(
+        target=run_engine_in_thread, daemon=True)
+    engine_thread.start()
+
+# Configuração para rodar no OnRender
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))  # Pega a porta da variável de ambiente ou usa 8000 como padrão
+    app.run(host="0.0.0.0", port=port)
