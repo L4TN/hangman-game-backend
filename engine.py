@@ -13,11 +13,12 @@ waiting_players = []
 
 # Dicionário de temas e palavras associadas
 themes = {
-    0: ["xerife", "bangue"],
-    1: ["papainoel", "estrela"],
-    2: ["abobora", "fantasma"],
-    3: ["oceano", "sereia"]
+    0: ["xerife", "bangue", "banco"],
+    1: ["cadeia", "prisioneiro", "cowboy"],
+    2: ["cavalo", "vaca", "poeira"],
+    3: ["deserto", "oeste"]
 }
+
 
 class GameSession:
     def __init__(self, player1, player2, session_id):
@@ -262,7 +263,36 @@ async def handle_connection(websocket):
 
         # Cria uma nova sessão ou adiciona o jogador à fila
         waiting_players.append((websocket, player_id, session_id))
+        player_index = len(waiting_players) - 1  # 0 para o primeiro jogador, 1 para o segundo
 
+        if len(waiting_players) >= 2:
+            (player1, player1_id, session1_id), (player2, player2_id, session2_id) = waiting_players[:2]
+            del waiting_players[:2]
+            game_session = GameSession(player1, player2, session1_id)
+            await game_session.start()
+        else:
+            # Envia a mensagem de espera incluindo o número do jogador
+            await websocket.send(json.dumps({
+                "type": "wait",
+                "message": f"Aguardando outro jogador. Você é o jogador {player_index + 1}",
+                "player_index": player_index
+            }))
+            await keep_connection_alive(websocket)
+    except websockets.exceptions.ConnectionClosed:
+        print(f"Jogador {websocket.remote_address} desconectou.")
+    except Exception as e:
+        print(f"Exceção na conexão com {websocket.remote_address}: {e}")
+
+    print(f"Novo jogador conectado: {websocket.remote_address}")
+    try:
+        greeting = await websocket.recv()
+        player_data = json.loads(greeting)
+        player_id = player_data["player_id"]
+        session_id = player_data["session_id"]
+
+        # Cria uma nova sessão ou adiciona o jogador à fila
+        waiting_players.append((websocket, player_id, session_id))
+ 
         if len(waiting_players) >= 2:
             (player1, player1_id, session1_id), (player2, player2_id, session2_id) = waiting_players[:2]
             del waiting_players[:2]
